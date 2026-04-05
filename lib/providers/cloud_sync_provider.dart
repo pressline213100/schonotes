@@ -16,23 +16,25 @@ class CloudSyncProvider extends ChangeNotifier {
   bool _autoSync = true;
   bool get autoSync => _autoSync;
   
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '1051959355302-mjh8pqn2g9at44nq585pva8e4eilftiu.apps.googleusercontent.com',
-    scopes: ['email', 'profile'],
-  );
-
   CloudSyncProvider() {
     _loadState();
+    _initGoogleSignIn();
+  }
+
+  Future<void> _initGoogleSignIn() async {
+    await GoogleSignIn.instance.initialize(
+      clientId: '1051959355302-mjh8pqn2g9at44nq585pva8e4eilftiu.apps.googleusercontent.com',
+    );
     
     // Listen to Google Sign-In state changes
-    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
-      if (account != null) {
+    GoogleSignIn.instance.authenticationEvents.listen((GoogleSignInAuthenticationEvent event) {
+      if (event is GoogleSignInAuthenticationEventSignIn) {
          _isLoggedIn = true;
-         _userName = account.displayName ?? account.email;
+         _userName = event.user.displayName ?? event.user.email;
          _saveState();
          notifyListeners();
          if (_autoSync) syncToCloud();
-      } else {
+      } else if (event is GoogleSignInAuthenticationEventSignOut) {
          _isLoggedIn = false;
          _userName = "";
          _saveState();
@@ -83,7 +85,7 @@ class CloudSyncProvider extends ChangeNotifier {
 
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
-      await _googleSignIn.signIn();
+      await GoogleSignIn.instance.authenticate();
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Google Login Failed: $error'))
@@ -97,7 +99,7 @@ class CloudSyncProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     try {
-      await _googleSignIn.disconnect();
+      await GoogleSignIn.instance.signOut();
     } catch (_) {}
     
     _isLoggedIn = false;
