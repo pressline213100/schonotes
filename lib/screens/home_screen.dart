@@ -441,7 +441,7 @@ class HomeScreen extends StatelessWidget {
                     icon: const Icon(Icons.login),
                     label: const Text('Google Login'),
                     onPressed: () { 
-                      syncProvider.mockLogin("Antigravity User");
+                      syncProvider.signInWithGoogle(context);
                       Navigator.pop(ctx);
                     },
                   )

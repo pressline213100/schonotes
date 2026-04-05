@@ -94,7 +94,7 @@ class TopToolbar extends StatelessWidget {
                         activeTool: provider.activeTool,
                         onTap: () {
                            if (provider.activeTool == ToolType.highlighter) {
-                             // _showHighlighterSettings(context, provider);
+                             _showHighlighterSettings(context, provider);
                            } else {
                              provider.setActiveTool(ToolType.highlighter);
                            }
@@ -347,7 +347,7 @@ class TopToolbar extends StatelessWidget {
           builder: (context, setModalState) {
             return Container(
               padding: const EdgeInsets.all(24),
-              height: 200,
+              height: 300,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -366,14 +366,70 @@ class TopToolbar extends StatelessWidget {
                        ),
                        ChoiceChip(
                          label: const Text('Fountain Pen'),
-                         selected: provider.penThinning > 0.0,
+                         selected: provider.penThinning > 0.0 && provider.penThinning <= 0.6,
                          onSelected: (val) {
                            if (val) provider.penThinning = 0.6;
                            setModalState(() {});
                          },
                        ),
+                       ChoiceChip(
+                         label: const Text('Brush Pen'),
+                         selected: provider.penThinning > 0.6,
+                         onSelected: (val) {
+                           if (val) provider.penThinning = 0.95;
+                           setModalState(() {});
+                         },
+                       ),
                      ],
-                   )
+                   ),
+                   const SizedBox(height: 24),
+                   const Text('Pen Thickness', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                   Slider(
+                     value: provider.activeWidth,
+                     min: 1.0,
+                     max: 20.0,
+                     label: provider.activeWidth.round().toString(),
+                     onChanged: (double value) {
+                       setModalState(() {
+                         provider.setActiveWidth(value);
+                       });
+                     },
+                   ),
+                ],
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void _showHighlighterSettings(BuildContext context, CanvasProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              height: 200,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   const Text('Highlighter Thickness', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                   const SizedBox(height: 16),
+                   Slider(
+                     value: provider.activeWidth,
+                     min: 5.0,
+                     max: 40.0,
+                     label: provider.activeWidth.round().toString(),
+                     onChanged: (double value) {
+                       setModalState(() {
+                         provider.setActiveWidth(value);
+                       });
+                     },
+                   ),
                 ],
               ),
             );

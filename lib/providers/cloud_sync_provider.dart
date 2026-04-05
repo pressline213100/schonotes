@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class CloudSyncProvider extends ChangeNotifier {
   bool _isSyncing = false;
@@ -14,9 +15,30 @@ class CloudSyncProvider extends ChangeNotifier {
   
   bool _autoSync = true;
   bool get autoSync => _autoSync;
+  
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: '1051959355302-mjh8pqn2g9at44nq585pva8e4eilftiu.apps.googleusercontent.com',
+    scopes: ['email', 'profile'],
+  );
 
   CloudSyncProvider() {
     _loadState();
+    
+    // Listen to Google Sign-In state changes
+    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
+      if (account != null) {
+         _isLoggedIn = true;
+         _userName = account.displayName ?? account.email;
+         _saveState();
+         notifyListeners();
+         if (_autoSync) syncToCloud();
+      } else {
+         _isLoggedIn = false;
+         _userName = "";
+         _saveState();
+         notifyListeners();
+      }
+    });
   }
 
   Future<void> _loadState() async {
@@ -59,17 +81,25 @@ class CloudSyncProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void mockLogin(String name) {
-    _isLoggedIn = true;
-    _userName = name;
-    _saveState();
-    notifyListeners();
-    
-    // Auto sync on login
-    if (_autoSync) syncToCloud();
+  Future<void> signInWithGoogle(BuildContext context) async {
+    try {
+      await _googleSignIn.signIn();
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Login Failed: $error'))
+      );
+    }
   }
 
-  void logout() {
+  void mockLogin(String name) {
+    // Kept for fallback, but deprecated in UI logic
+  }
+
+  Future<void> logout() async {
+    try {
+      await _googleSignIn.disconnect();
+    } catch (_) {}
+    
     _isLoggedIn = false;
     _userName = "";
     _lastSyncTime = null;
