@@ -16,6 +16,7 @@ class Stroke {
   double strokeWidth;
   ToolType toolType;
   List<PointData> points;
+  double penThinning;
   
   // Selection & transforms
   bool isSelected = false;
@@ -31,6 +32,7 @@ class Stroke {
     required this.strokeWidth,
     required this.toolType,
     required this.points,
+    this.penThinning = 0.6,
   });
 
   Path get path {
@@ -78,7 +80,7 @@ class Stroke {
     // Customize freehand algorithm
     final options = StrokeOptions(
       size: strokeWidth,
-      thinning: toolType == ToolType.pen ? 0.6 : 0.0,
+      thinning: toolType == ToolType.pen ? penThinning : 0.0,
       smoothing: 0.5,
       streamline: 0.5,
       simulatePressure: toolType == ToolType.pen,
@@ -128,6 +130,7 @@ class Stroke {
       strokeWidth: strokeWidth,
       toolType: toolType,
       points: List.from(points),
+      penThinning: penThinning,
     )..isSelected = isSelected
      ..transformOffset = transformOffset
      ..isTapeHidden = isTapeHidden;

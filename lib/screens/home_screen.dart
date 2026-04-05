@@ -382,40 +382,87 @@ class HomeScreen extends StatelessWidget {
   void _showAccountDialog(BuildContext context, CloudSyncProvider syncProvider) {
      showDialog(
        context: context,
-       builder: (ctx) => AlertDialog(
-         title: const Text('Cloud Account'),
-         content: Column(
-           mainAxisSize: MainAxisSize.min,
-           children: [
-             if (syncProvider.isLoggedIn) ...[
-                const CircleAvatar(radius: 30, backgroundColor: Colors.blueAccent, child: Icon(Icons.person, size: 40, color: Colors.white)),
-                const SizedBox(height: 12),
-                Text(syncProvider.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                const Text('Syncing Active', style: TextStyle(color: Colors.green, fontSize: 12)),
-             ] else ...[
-                const Icon(Icons.cloud_off, size: 50, color: Colors.grey),
-                const SizedBox(height: 12),
-                const Text('Login to sync your notes across devices'),
-             ]
-           ],
-         ),
-         actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
-            if (!syncProvider.isLoggedIn)
-              ElevatedButton.icon(
-                icon: const Icon(Icons.login),
-                label: const Text('Google Login'),
-                onPressed: () { 
-                  syncProvider.mockLogin("Antigravity User");
-                  Navigator.pop(ctx);
-                },
-              )
-            else
-               TextButton(
-                 onPressed: () { syncProvider.logout(); Navigator.pop(ctx); },
-                 child: const Text('Logout', style: TextStyle(color: Colors.red)),
-               )
-         ],
+       builder: (ctx) => StatefulBuilder(
+         builder: (context, setDialogState) {
+           return AlertDialog(
+             title: const Text('Cloud Account'),
+             content: Column(
+               mainAxisSize: MainAxisSize.min,
+               children: [
+                 if (syncProvider.isLoggedIn) ...[
+                    const CircleAvatar(radius: 30, backgroundColor: Colors.blueAccent, child: Icon(Icons.person, size: 40, color: Colors.white)),
+                    const SizedBox(height: 12),
+                    Text(syncProvider.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Auto Backup to Cloud'),
+                              Switch(
+                                value: syncProvider.autoSync,
+                                onChanged: (val) {
+                                  setDialogState(() {
+                                    syncProvider.toggleAutoSync(val);
+                                  });
+                                }
+                              )
+                            ],
+                          ),
+                          if (syncProvider.lastSyncTime != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                'Last backed up: ${syncProvider.lastSyncTime!.month}/${syncProvider.lastSyncTime!.day} ${syncProvider.lastSyncTime!.hour}:${syncProvider.lastSyncTime!.minute.toString().padLeft(2, '0')}',
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            )
+                        ],
+                      ),
+                    ),
+                 ] else ...[
+                    const Icon(Icons.cloud_off, size: 50, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    const Text('Login to sync your notes across devices'),
+                 ]
+               ],
+             ),
+             actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+                if (!syncProvider.isLoggedIn)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.login),
+                    label: const Text('Google Login'),
+                    onPressed: () { 
+                      syncProvider.mockLogin("Antigravity User");
+                      Navigator.pop(ctx);
+                    },
+                  )
+                else ...[
+                   if (!syncProvider.isSyncing)
+                     ElevatedButton.icon(
+                       icon: const Icon(Icons.backup),
+                       label: const Text('Backup Now'),
+                       onPressed: () { 
+                         syncProvider.syncToCloud();
+                         Navigator.pop(ctx);
+                       },
+                     ),
+                   TextButton(
+                     onPressed: () { syncProvider.logout(); Navigator.pop(ctx); },
+                     child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                   ),
+                ]
+             ],
+           );
+         }
        )
      );
   }

@@ -13,8 +13,20 @@ class CanvasProvider extends ChangeNotifier {
   
   ToolType activeTool = ToolType.pen;
   EraserType eraserType = EraserType.object;
-  Color activeColor = Colors.black;
-  double activeWidth = 2.0;
+  
+  // Pen settings
+  double penThinning = 0.6; // 0.6 for Fountain, 0.0 for Ballpoint
+  
+  // Quick Slots
+  List<Color> presetColors = [Colors.black, Colors.blueAccent, Colors.redAccent];
+  int activeColorSlot = 0;
+  
+  List<double> presetWidths = [2.0, 4.0, 8.0];
+  int activeWidthSlot = 0;
+  
+  Color get activeColor => presetColors[activeColorSlot];
+  double get activeWidth => presetWidths[activeWidthSlot];
+  
   double eraserWidth = 30.0;
   List<Color> recentColors = [Colors.black, Colors.blueAccent, Colors.redAccent];
   Offset? currentPointer;
@@ -132,9 +144,31 @@ class CanvasProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setActiveColor(Color color) {
-    activeColor = color;
+  void setActiveColorSlot(int index) {
+    activeColorSlot = index;
     notifyListeners();
+  }
+
+  void updateColorSlot(int index, Color color) {
+    presetColors[index] = color;
+    activeColorSlot = index;
+    notifyListeners();
+  }
+
+  void setActiveWidthSlot(int index) {
+    activeWidthSlot = index;
+    notifyListeners();
+  }
+
+  void updateWidthSlot(int index, double width) {
+    presetWidths[index] = width;
+    activeWidthSlot = index;
+    notifyListeners();
+  }
+
+  void setActiveColor(Color color) {
+    // Legacy support: update current slot
+    updateColorSlot(activeColorSlot, color);
   }
 
   void addRecentColor(Color color) {
@@ -149,7 +183,7 @@ class CanvasProvider extends ChangeNotifier {
     if (activeTool == ToolType.eraser) {
       eraserWidth = width;
     } else {
-      activeWidth = width;
+      updateWidthSlot(activeWidthSlot, width);
     }
     notifyListeners();
   }
@@ -192,9 +226,10 @@ class CanvasProvider extends ChangeNotifier {
       activeStrokes[pageId] = Stroke(
         id: DateTime.now().toString(),
         color: activeTool == ToolType.highlighter ? activeColor.withOpacity(0.3) : activeColor,
-        strokeWidth: activeWidth,
+        strokeWidth: activeTool == ToolType.highlighter ? activeWidth * 2 : activeWidth,
         toolType: activeTool,
         points: [PointData(point, pressure)],
+        penThinning: penThinning,
       );
     } else {
       activeStrokes[pageId]!.points.add(PointData(point, pressure));

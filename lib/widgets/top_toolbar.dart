@@ -80,24 +80,37 @@ class TopToolbar extends StatelessWidget {
                         icon: Icons.edit,
                         tool: ToolType.pen,
                         activeTool: provider.activeTool,
-                        onTap: () => provider.setActiveTool(ToolType.pen),
+                        onTap: () {
+                           if (provider.activeTool == ToolType.pen) {
+                             _showPenSettings(context, provider);
+                           } else {
+                             provider.setActiveTool(ToolType.pen);
+                           }
+                        },
                       ),
                       _ToolButton(
                         icon: Icons.brush,
                         tool: ToolType.highlighter,
                         activeTool: provider.activeTool,
-                        onTap: () => provider.setActiveTool(ToolType.highlighter),
+                        onTap: () {
+                           if (provider.activeTool == ToolType.highlighter) {
+                             // _showHighlighterSettings(context, provider);
+                           } else {
+                             provider.setActiveTool(ToolType.highlighter);
+                           }
+                        },
                       ),
-                      GestureDetector(
-                         onDoubleTap: () {
-                            provider.eraserType = provider.eraserType == EraserType.object ? EraserType.pixel : EraserType.object;
+                      _ToolButton(
+                         icon: Icons.auto_fix_normal,
+                         tool: ToolType.eraser,
+                         activeTool: provider.activeTool,
+                         onTap: () {
+                            if (provider.activeTool == ToolType.eraser) {
+                              _showEraserSettings(context, provider);
+                            } else {
+                              provider.setActiveTool(ToolType.eraser);
+                            }
                          },
-                         child: _ToolButton(
-                            icon: Icons.auto_fix_normal, // Better Eraser icon
-                            tool: ToolType.eraser,
-                            activeTool: provider.activeTool,
-                            onTap: () => provider.setActiveTool(ToolType.eraser),
-                         ),
                       ),
                       
                       _ToolButton(
@@ -153,19 +166,14 @@ class TopToolbar extends StatelessWidget {
                       ),
 
                       Container(width: 1, height: 30, color: Colors.grey.withOpacity(0.3), margin: const EdgeInsets.symmetric(horizontal: 8)),
-                      
-                      ...provider.recentColors.map((color) => _ColorButton(color, provider)),
-                      IconButton(
-                        icon: const Icon(Icons.palette),
-                        onPressed: () => _showColorPicker(context, provider),
-                      ),
+                      ...List.generate(3, (index) => _ColorSlotButton(index: index, provider: provider)),
                       
                       Container(width: 1, height: 30, color: Colors.grey.withOpacity(0.3), margin: const EdgeInsets.symmetric(horizontal: 8)),
                       
-                      IconButton(
-                        icon: const Icon(Icons.line_weight),
-                        onPressed: () => _showThicknessSlider(context, provider),
-                      ),
+                      ...List.generate(3, (index) => _WidthSlotButton(index: index, provider: provider)),
+                      
+                      Container(width: 1, height: 30, color: Colors.grey.withOpacity(0.3), margin: const EdgeInsets.symmetric(horizontal: 8)),
+
                       IconButton(
                         icon: Icon(Icons.description_outlined, color: provider.currentNote.paperColor != 'white' ? Colors.blue : null),
                         tooltip: 'Paper Settings',
@@ -284,69 +292,7 @@ class TopToolbar extends StatelessWidget {
     }
   }
   
-  void _showColorPicker(BuildContext context, CanvasProvider provider) {
-    Color pickerColor = provider.activeColor;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Pick a color!'),
-          content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: pickerColor,
-              onColorChanged: (c) => pickerColor = c,
-            ),
-          ),
-          actions: <Widget>[
-            ElevatedButton(
-              child: const Text('Got it'),
-              onPressed: () {
-                provider.setActiveColor(pickerColor);
-                provider.addRecentColor(pickerColor);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-  
-  void _showThicknessSlider(BuildContext context, CanvasProvider provider) {
-    double currentWidth = provider.activeTool == ToolType.eraser ? provider.eraserWidth : provider.activeWidth;
-    double maxSliderValue = provider.activeTool == ToolType.eraser ? 100.0 : 20.0;
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (BuildContext ctx) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return Container(
-              padding: const EdgeInsets.all(24),
-              height: 150,
-              child: Column(
-                children: [
-                   Text('${provider.activeTool == ToolType.eraser ? "Eraser" : "Stroke"} Thickness: ${currentWidth.toStringAsFixed(1)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                   Slider(
-                     value: currentWidth,
-                     min: 1.0,
-                     max: maxSliderValue,
-                     label: currentWidth.round().toString(),
-                     onChanged: (double value) {
-                       setState(() {
-                         currentWidth = value;
-                         provider.setActiveWidth(value);
-                       });
-                     },
-                   ),
-                ],
-              ),
-            );
-          }
-        );
-      }
-    );
-  }
+// unused methods removed
 
   void _showPaperSettings(BuildContext context, CanvasProvider provider) {
     showModalBottomSheet(
@@ -384,6 +330,248 @@ class TopToolbar extends StatelessWidget {
                       _TemplateButton(label: 'Lines', value: 'lines', current: provider.currentNote.backgroundTemplate, onSelect: (v) { provider.setBackgroundTemplate(v); setModalState(() {}); }),
                     ],
                   ),
+                ],
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+  void _showPenSettings(BuildContext context, CanvasProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              height: 200,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   const Text('Pen Style', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                   const SizedBox(height: 16),
+                   Row(
+                     mainAxisAlignment: MainAxisAlignment.spaceAround,
+                     children: [
+                       ChoiceChip(
+                         label: const Text('Ballpoint Pen'),
+                         selected: provider.penThinning == 0.0,
+                         onSelected: (val) {
+                           if (val) provider.penThinning = 0.0;
+                           setModalState(() {});
+                         },
+                       ),
+                       ChoiceChip(
+                         label: const Text('Fountain Pen'),
+                         selected: provider.penThinning > 0.0,
+                         onSelected: (val) {
+                           if (val) provider.penThinning = 0.6;
+                           setModalState(() {});
+                         },
+                       ),
+                     ],
+                   )
+                ],
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void _showEraserSettings(BuildContext context, CanvasProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              height: 250,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   const Text('Eraser Type', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                   const SizedBox(height: 16),
+                   Row(
+                     mainAxisAlignment: MainAxisAlignment.spaceAround,
+                     children: [
+                       ChoiceChip(
+                         label: const Text('Object Eraser'),
+                         selected: provider.eraserType == EraserType.object,
+                         onSelected: (val) {
+                           if (val) provider.eraserType = EraserType.object;
+                           setModalState(() {});
+                         },
+                       ),
+                       ChoiceChip(
+                         label: const Text('Pixel Eraser'),
+                         selected: provider.eraserType == EraserType.pixel,
+                         onSelected: (val) {
+                           if (val) provider.eraserType = EraserType.pixel;
+                           setModalState(() {});
+                         },
+                       ),
+                     ],
+                   ),
+                   const SizedBox(height: 24),
+                   const Text('Eraser Size', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                   Slider(
+                     value: provider.eraserWidth,
+                     min: 10.0,
+                     max: 100.0,
+                     label: provider.eraserWidth.round().toString(),
+                     onChanged: (double value) {
+                       setModalState(() {
+                         provider.setActiveWidth(value);
+                       });
+                     },
+                   ),
+                ],
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+}
+
+class _ColorSlotButton extends StatelessWidget {
+  final int index;
+  final CanvasProvider provider;
+  const _ColorSlotButton({required this.index, required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    bool isSelected = index == provider.activeColorSlot;
+    Color color = provider.presetColors[index];
+
+    return GestureDetector(
+      onTap: () {
+        if (isSelected) {
+          _showColorPickerForSlot(context, provider, index);
+        } else {
+          provider.setActiveColorSlot(index);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: isSelected ? 30 : 24,
+        height: isSelected ? 30 : 24,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? Colors.blueAccent : Colors.grey.shade400,
+            width: isSelected ? 3 : 1,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showColorPickerForSlot(BuildContext context, CanvasProvider provider, int index) {
+    Color pickerColor = provider.presetColors[index];
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Pick Color'),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: pickerColor,
+              onColorChanged: (c) => pickerColor = c,
+            ),
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              child: const Text('Select'),
+              onPressed: () {
+                provider.updateColorSlot(index, pickerColor);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _WidthSlotButton extends StatelessWidget {
+  final int index;
+  final CanvasProvider provider;
+  const _WidthSlotButton({required this.index, required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    bool isSelected = index == provider.activeWidthSlot;
+    double width = provider.presetWidths[index];
+    
+    // Normalize rendering radius
+    double renderRadius = (width.clamp(1.0, 10.0)) + 2.0;
+
+    return GestureDetector(
+      onTap: () {
+        if (isSelected) {
+          _showWidthSliderForSlot(context, provider, index);
+        } else {
+          provider.setActiveWidthSlot(index);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: 30,
+        height: 30,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected ? Colors.blue.withOpacity(0.15) : Colors.transparent,
+        ),
+        child: Container(
+           width: renderRadius,
+           height: renderRadius,
+           decoration: const BoxDecoration(
+             color: Colors.black87,
+             shape: BoxShape.circle,
+           ),
+        ),
+      ),
+    );
+  }
+
+  void _showWidthSliderForSlot(BuildContext context, CanvasProvider provider, int index) {
+    double currentWidth = provider.presetWidths[index];
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              height: 150,
+              child: Column(
+                children: [
+                   Text('Stroke Width: ${currentWidth.toStringAsFixed(1)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                   Slider(
+                     value: currentWidth,
+                     min: 1.0,
+                     max: 20.0,
+                     label: currentWidth.round().toString(),
+                     onChanged: (double value) {
+                       setModalState(() {
+                         currentWidth = value;
+                         provider.updateWidthSlot(index, value);
+                       });
+                     },
+                   ),
                 ],
               ),
             );
@@ -469,30 +657,4 @@ class _ToolButton extends StatelessWidget {
   }
 }
 
-class _ColorButton extends StatelessWidget {
-  final Color color;
-  final CanvasProvider provider;
-
-  const _ColorButton(this.color, this.provider);
-
-  @override
-  Widget build(BuildContext context) {
-    bool isSelected = color == provider.activeColor;
-    return GestureDetector(
-      onTap: () => provider.setActiveColor(color),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey.shade300,
-            width: isSelected ? 3 : 1,
-          ),
-        ),
-      ),
-    );
-  }
-}
+// unused classes removed
