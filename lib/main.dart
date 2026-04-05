@@ -5,6 +5,7 @@ import 'providers/library_provider.dart';
 import 'providers/cloud_sync_provider.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
       providers: [
