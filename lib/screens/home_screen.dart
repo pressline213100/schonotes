@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import '../models/file_system.dart';
 import '../providers/library_provider.dart';
 import '../providers/cloud_sync_provider.dart';
+import '../widgets/google_sign_in_button.dart';
 import 'canvas_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -437,13 +438,11 @@ class HomeScreen extends StatelessWidget {
              actions: [
                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
                 if (!syncProvider.isLoggedIn)
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.login),
-                    label: const Text('Google Login'),
-                    onPressed: () { 
+                  buildGoogleSignInButton(
+                    onPressedFallback: () { 
                       syncProvider.signInWithGoogle(context);
                       Navigator.pop(ctx);
-                    },
+                    }
                   )
                 else ...[
                    if (!syncProvider.isSyncing)
